@@ -34,10 +34,11 @@ $ pack build --buildpack fagiani/apt myapp
 By default, all custom repositories added to the end of `sources.list` file.
 If you want to change this behavior, you can configure it via `BPAPT_CUSTOM_REPO_ORDER` variable:
 
-| Environment variable      | Description                                                                                                                                                                                       |
-|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `BPAPT_CUSTOM_REPO_ORDER` | If set to `append` (default), all custom repositories will be added to the end of `sources.list`. <br> If set to `prepend`, all custom repositories will be added to the start of `sources.list`. |
-
+| `BPAPT_CUSTOM_REPOS` | Description                                                                                   |
+|----------------------|-----------------------------------------------------------------------------------------------|
+| `append`             | All custom repositories will be added to the end of `sources.list`.                           |
+| `prepend`            | All custom repositories will be added to the start of `sources.list`.                         |
+| `custom-only`        | Only custom repos would be added to `sources.list`, any default repositories will be deleted. |
 
 ## License
 
