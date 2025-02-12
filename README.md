@@ -36,7 +36,7 @@ If you want to change this behavior, you can configure it via `BPAPT_CUSTOM_REPO
 
 | `BPAPT_CUSTOM_REPOS` | Description                                                                                   |
 |----------------------|-----------------------------------------------------------------------------------------------|
-| `append`             | All custom repositories will be added to the end of `sources.list`.                           |
+| `append` (default)   | All custom repositories will be added to the end of `sources.list`.                           |
 | `prepend`            | All custom repositories will be added to the start of `sources.list`.                         |
 | `custom-only`        | Only custom repos would be added to `sources.list`, any default repositories will be deleted. |
 
