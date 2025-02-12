@@ -30,6 +30,15 @@ $ pack build --buildpack fagiani/apt myapp
     # or add custom apt repos (only required if using packages outside of the standard Ubuntu APT repositories)
     :repo:deb http://cz.archive.ubuntu.com/ubuntu artful main universe
 
+#### Repositories order
+By default, all custom repositories added to the end of `sources.list` file.
+If you want to change this behavior, you can configure it via `BPAPT_CUSTOM_REPO_ORDER` variable:
+
+| Environment variable      | Description                                                                                                                                                                                       |
+|---------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `BPAPT_CUSTOM_REPO_ORDER` | If set to `append` (default), all custom repositories will be added to the end of `sources.list`. <br> If set to `prepend`, all custom repositories will be added to the start of `sources.list`. |
+
+
 ## License
 
 MIT
