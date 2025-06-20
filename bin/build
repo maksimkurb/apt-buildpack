@@ -50,7 +50,6 @@ fi
 # Ensure we store the STACK in the cache for next time.
 echo "$CNB_STACK_ID" > "$apt_layer/STACK"
 
-APT_CACHE_DIR="$apt_layer/cache"
 APT_STATE_DIR="$apt_layer/state"
 APT_SOURCELIST_DIR="$apt_layer/sources"   # place custom sources.list here
 APT_SOURCES="$APT_SOURCELIST_DIR/sources.list"
@@ -65,9 +64,7 @@ if [ -f $apt_layer/Aptfile ] && cmp -s Aptfile $apt_layer/Aptfile && [[ $CACHED_
   topic "Aptfile and stack look the same, reusing cache"
 else
   # Aptfile changed or does not exist or STACK changed
-  topic "Detected Aptfile changes, flushing cache"
-  rm -rf $APT_CACHE_DIR
-  mkdir -p "$APT_CACHE_DIR/archives/partial"
+  topic "Detected Aptfile changes, rebuilding packages"
   mkdir -p "$APT_STATE_DIR/lists/partial"
   mkdir -p "$APT_SOURCELIST_DIR"   # make dir for sources
   cp -f Aptfile "$apt_layer"/Aptfile
@@ -94,7 +91,7 @@ else
 
     mv "/tmp/sources.list" "$APT_SOURCES"
   fi
-  APT_OPTIONS="-o debug::nolocking=true -o dir::cache=$APT_CACHE_DIR -o dir::state=$APT_STATE_DIR"
+  APT_OPTIONS="-o debug::nolocking=true -o dir::state=$APT_STATE_DIR"
   APT_OPTIONS="$APT_OPTIONS -o dir::etc::sourcelist=$APT_SOURCES -o dir::etc::sourceparts=/dev/null"
 
   topic "Updating apt caches"
@@ -104,21 +101,22 @@ else
   for PACKAGE in $(cat Aptfile | grep -v -s -e '^#' | grep -v -s -e "^:repo:"); do
     if [[ $PACKAGE == *deb ]]; then
       PACKAGE_NAME=$(basename $PACKAGE .deb)
-      PACKAGE_FILE=$APT_CACHE_DIR/archives/$PACKAGE_NAME.deb
+      TEMP_DEB=$(mktemp --suffix=.deb)
 
       topic "Fetching $PACKAGE"
-      curl --silent --show-error --fail -L -z $PACKAGE_FILE -o $PACKAGE_FILE $PACKAGE 2>&1 | indent
+      curl --silent --show-error --fail -L -o $TEMP_DEB $PACKAGE 2>&1 | indent
+      echo "$PACKAGE_NAME.deb" | indent
+      dpkg -x $TEMP_DEB $apt_layer/
+      rm -f $TEMP_DEB
     else
-      topic "Fetching .debs for $PACKAGE"
-      apt-get $APT_OPTIONS -y $APT_FORCE_YES -d install --reinstall $PACKAGE | indent
+      topic "Installing $PACKAGE"
+      apt-get $APT_OPTIONS -y $APT_FORCE_YES --no-install-recommends install --reinstall $PACKAGE | indent
     fi
   done
 
-  topic "Installing apt packages with dpkg"
-  for DEB in $(ls -1 $APT_CACHE_DIR/archives/*.deb); do
-    echo "$(basename $DEB)" | indent
-    dpkg -x $DEB $apt_layer/
-  done
+  topic "Cleaning apt caches"
+  apt-get $APT_OPTIONS clean | indent
+  apt-get $APT_OPTIONS autoclean | indent
 
   topic "Writing profile script and environment variables"
   exports_path=$apt_layer/.profile.d/000_apt.sh
