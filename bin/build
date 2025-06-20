@@ -27,6 +27,27 @@ function indent() {
   esac
 }
 
+function build_path() {
+  local endings=("$@")
+  local prefixes=("$apt_layer" "$apt_layer/usr" "$apt_layer/usr/local")
+  local result=""
+  
+  for prefix in "${prefixes[@]}"; do
+    for ending in "${endings[@]}"; do
+      local full_path="$prefix/$ending"
+      if [ -d "$full_path" ]; then
+        if [ -z "$result" ]; then
+          result="$full_path"
+        else
+          result="$result:$full_path"
+        fi
+      fi
+    done
+  done
+  
+  echo "$result"
+}
+
 layers_dir="$1"
 env_dir="$2/env"
 plan_path="$3"
@@ -96,6 +117,7 @@ else
   fi
   APT_OPTIONS="-o debug::nolocking=true -o dir::cache=$APT_CACHE_DIR -o dir::state=$APT_STATE_DIR"
   APT_OPTIONS="$APT_OPTIONS -o dir::etc::sourcelist=$APT_SOURCES -o dir::etc::sourceparts=/dev/null"
+  APT_OPTIONS="$APT_OPTIONS -o APT::Install-Suggests=false -q"
 
   topic "Updating apt caches"
   # Ignore stderr from apt-get update containing: rm: cannot remove '/var/cache/apt/archives/partial/*.deb': Permission denied
@@ -133,19 +155,19 @@ else
   echo -n "$path:$PATH" > $apt_env_dir/PATH.prepend
   echo -n ":" > $apt_env_dir/PATH.delim
 
-  ld_library_path=$apt_layer/lib/x86_64-linux-gnu:$apt_layer/lib/i386-linux-gnu:$apt_layer/lib:$apt_layer/usr/lib/x86_64-linux-gnu:$apt_layer/usr/lib/i386-linux-gnu:$apt_layer/usr/lib
+  ld_library_path=$(build_path "lib/x86_64-linux-gnu" "lib/i386-linux-gnu" "lib")
   echo "LD_LIBRARY_PATH=$ld_library_path" | indent
   echo "export LD_LIBRARY_PATH=\"$ld_library_path:\$LD_LIBRARY_PATH\"" >> $exports_path
   echo -n "$ld_library_path" > $apt_env_dir/LD_LIBRARY_PATH.prepend
   echo -n ":" > $apt_env_dir/LD_LIBRARY_PATH.delim
 
-  library_path=$ld_library_path
+  library_path=$(build_path "lib/x86_64-linux-gnu" "lib/i386-linux-gnu" "lib")
   echo "LIBRARY_PATH=$library_path" | indent
   echo "export LIBRARY_PATH=\"$library_path:\$LIBRARY_PATH\"" >> $exports_path
   echo -n "$library_path" > $apt_env_dir/LIBRARY_PATH.prepend
   echo -n ":" > $apt_env_dir/LIBRARY_PATH.delim
 
-  include_path=$apt_layer/usr/include:$apt_layer/usr/include/x86_64-linux-gnu
+  include_path=$(build_path "include" "include/x86_64-linux-gnu")
   echo "INCLUDE_PATH=$include_path" | indent
   echo "export INCLUDE_PATH=\"$include_path:\$INCLUDE_PATH\"" >> $exports_path
   echo -n "$include_path" > $apt_env_dir/INCLUDE_PATH.prepend
@@ -163,7 +185,7 @@ else
   cp "$apt_env_dir"/INCLUDE_PATH.prepend "$apt_env_dir"/CPPPATH.prepend
   echo -n ":" > $apt_env_dir/CPPPATH.delim
 
-  pkg_config_path=$apt_layer/usr/lib/x86_64-linux-gnu/pkgconfig:$apt_layer/usr/lib/i386-linux-gnu/pkgconfig:$apt_layer/usr/lib/pkgconfig
+  pkg_config_path=$(build_path "lib/x86_64-linux-gnu/pkgconfig" "lib/i386-linux-gnu/pkgconfig" "lib/pkgconfig" "share/pkgconfig")
   echo "PKG_CONFIG_PATH=$pkg_config_path" | indent
   echo "export PKG_CONFIG_PATH=\"$pkg_config_path:\$PKG_CONFIG_PATH\"" >> $exports_path
   echo -n "$pkg_config_path" > $apt_env_dir/PKG_CONFIG_PATH.prepend

@@ -2,7 +2,7 @@ api = "0.10"
 
 [buildpack]
 id = "maksimkurb/apt"
-version = "0.3.1"
+version = "0.3.2"
 name = "apt Packages Buildpack"
 homepage = "https://github.com/maksimkurb/apt-buildpack"
 description = "Installs apt packages for further builds and runtime"
