@@ -149,7 +149,7 @@ else
   apt_env_dir=$apt_layer/env
   mkdir -p $apt_env_dir
 
-  path="$apt_layer/usr/bin"
+  path=$(build_path "usr/local/bin" "usr/bin" "bin")
   echo "PATH=$path" | indent
   echo "export PATH=\"$path:\$PATH\"" >> $exports_path
   echo -n "$path:$PATH" > $apt_env_dir/PATH.prepend
